@@ -5,9 +5,9 @@ import re
 
 from lxml import etree
 
-from utils.misc import extract_regex
-from utils.python import flatten
-from utils.decorator import deprecated
+from .utils.misc import extract_regex
+from .utils.python import flatten
+from .utils.decorator import deprecated
 from .common import _ctgroup
 
 
