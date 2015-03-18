@@ -2,9 +2,10 @@
 Selector tests for cssselect backend
 """
 from twisted.trial import unittest
-from scrapy.http import HtmlResponse
-from scrapy.selector.csstranslator import ScrapyHTMLTranslator
-from scrapy.selector import Selector
+
+from selectors import Selector
+from selectors.csstranslator import SelectorHTMLTranslator
+
 from cssselect.parser import SelectorSyntaxError
 from cssselect.xpath import ExpressionError
 
@@ -47,7 +48,7 @@ HTMLBODY = '''
 
 class TranslatorMixinTest(unittest.TestCase):
 
-    tr_cls = ScrapyHTMLTranslator
+    tr_cls = SelectorHTMLTranslator
 
     def setUp(self):
         self.tr = self.tr_cls()
@@ -119,8 +120,7 @@ class CSSSelectorTest(unittest.TestCase):
     sscls = Selector
 
     def setUp(self):
-        self.htmlresponse = HtmlResponse('http://example.com', body=HTMLBODY)
-        self.sel = self.sscls(self.htmlresponse)
+        self.sel = self.sscls(url='http://example.com', text=HTMLBODY)
 
     def x(self, *a, **kw):
         return [v.strip() for v in self.sel.css(*a, **kw).extract() if v.strip()]
