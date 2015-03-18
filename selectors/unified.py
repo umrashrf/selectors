@@ -4,7 +4,7 @@ XPath selectors based on lxml
 from lxml import etree
 
 from .utils.misc import extract_regex
-from .utils.python import flatten
+from .utils.python import flatten, iflatten
 from .utils.decorator import deprecated
 from .common import _ctgroup
 
