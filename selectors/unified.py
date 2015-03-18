@@ -1,8 +1,6 @@
 """
 XPath selectors based on lxml
 """
-import re
-
 from lxml import etree
 
 from .utils.misc import extract_regex
