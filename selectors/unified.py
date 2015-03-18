@@ -1,57 +1,22 @@
 """
 XPath selectors based on lxml
 """
-
 from lxml import etree
 
-from scrapy.utils.misc import extract_regex
-from scrapy.utils.trackref import object_ref
-from scrapy.utils.python import unicode_to_str, flatten, iflatten
-from scrapy.utils.decorator import deprecated
-from scrapy.http import HtmlResponse, XmlResponse
-from .lxmldocument import LxmlDocument
-from .csstranslator import ScrapyHTMLTranslator, ScrapyGenericTranslator
+from .utils.misc import extract_regex
+from .utils.python import flatten, iflatten
+from .utils.decorator import deprecated
+from .common import _ctgroup
 
 
 __all__ = ['Selector', 'SelectorList']
 
 
-class SafeXMLParser(etree.XMLParser):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('resolve_entities', False)
-        super(SafeXMLParser, self).__init__(*args, **kwargs)
+class Selector(object):
 
-_ctgroup = {
-    'html': {'_parser': etree.HTMLParser,
-             '_csstranslator': ScrapyHTMLTranslator(),
-             '_tostring_method': 'html'},
-    'xml': {'_parser': SafeXMLParser,
-            '_csstranslator': ScrapyGenericTranslator(),
-            '_tostring_method': 'xml'},
-}
+    __slots__ = ['text', 'namespaces', 'type', '_expr', '_root',
+                 '_parser', '_csstranslator', '_tostring_method']
 
-
-def _st(response, st):
-    if st is None:
-        return 'xml' if isinstance(response, XmlResponse) else 'html'
-    elif st in ('xml', 'html'):
-        return st
-    else:
-        raise ValueError('Invalid type: %s' % st)
-
-
-def _response_from_text(text, st):
-    rt = XmlResponse if st == 'xml' else HtmlResponse
-    return rt(url='about:blank', encoding='utf-8',
-              body=unicode_to_str(text, 'utf-8'))
-
-
-class Selector(object_ref):
-
-    __slots__ = ['response', 'text', 'namespaces', 'type', '_expr', '_root',
-                 '__weakref__', '_parser', '_csstranslator', '_tostring_method']
-
-    _default_type = None
     _default_namespaces = {
         "re": "http://exslt.org/regular-expressions",
 
@@ -65,23 +30,23 @@ class Selector(object_ref):
     }
     _lxml_smart_strings = False
 
-    def __init__(self, response=None, text=None, type=None, namespaces=None,
+    def __init__(self, text=None, url=None, type='html', namespaces=None,
                  _root=None, _expr=None):
-        self.type = st = _st(response, type or self._default_type)
+        self.type = st = type
         self._parser = _ctgroup[st]['_parser']
         self._csstranslator = _ctgroup[st]['_csstranslator']
         self._tostring_method = _ctgroup[st]['_tostring_method']
 
+        self.text = text
         if text is not None:
-            response = _response_from_text(text, st)
+            body = text.strip().encode('utf8') or '<html/>'
+            parser_obj = self._parser(recover=True, encoding='utf8')
+            _root = etree.fromstring(body, base_url=url, parser=parser_obj)
 
-        if response is not None:
-            _root = LxmlDocument(response, self._parser)
-
-        self.response = response
         self.namespaces = dict(self._default_namespaces)
         if namespaces is not None:
             self.namespaces.update(namespaces)
+
         self._root = _root
         self._expr = _expr
 

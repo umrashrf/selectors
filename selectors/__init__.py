@@ -1,5 +1,5 @@
-"""
-Selectors
-"""
-from scrapy.selector.unified import *
-from scrapy.selector.lxmlsel import *
+
+__version__ = '0.0.1'
+
+
+from selectors.unified import *
