@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Scrapy documentation build configuration file, created by
+# Selectors documentation build configuration file,
+# copied from Scrapy documentation build configuration file and created by
 # sphinx-quickstart on Mon Nov 24 12:02:52 2008.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -18,7 +19,7 @@ from os import path
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 sys.path.append(path.join(path.dirname(__file__), "_ext"))
-sys.path.append(path.join(path.dirname(path.dirname(__file__)), "scrapy"))
+sys.path.append(path.join(path.dirname(path.dirname(__file__)), "selectors"))
 
 
 # General configuration
@@ -26,7 +27,7 @@ sys.path.append(path.join(path.dirname(path.dirname(__file__)), "scrapy"))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['scrapydocs']
+extensions = ['selectorsdocs']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -41,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Scrapy'
-copyright = u'2008-2014, Scrapy developers'
+project = u'Selectors'
+copyright = u'2015, Scrapy/Selectors developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -50,9 +51,9 @@ copyright = u'2008-2014, Scrapy developers'
 #
 # The short X.Y version.
 try:
-    import scrapy
-    version = '.'.join(map(str, scrapy.version_info[:2]))
-    release = scrapy.__version__
+    import selectors
+    version = '.'.join(map(str, selectors.version_info[:2]))
+    release = selectors.__version__
 except ImportError:
     version = ''
     release = ''
@@ -98,7 +99,7 @@ pygments_style = 'sphinx'
 # The style sheet to use for HTML and HTML Help pages. A file of that name
 # must exist either in Sphinx' static/ path, or in one of the custom paths
 # given in html_static_path.
-html_style = 'scrapydoc.css'
+html_style = 'selectorsdoc.css'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -157,7 +158,7 @@ html_copy_source = True
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Scrapydoc'
+htmlhelp_basename = 'Selectorsdoc'
 
 
 # Options for LaTeX output
@@ -172,8 +173,8 @@ htmlhelp_basename = 'Scrapydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'Scrapy.tex', ur'Scrapy Documentation',
-   ur'Scrapy developers', 'manual'),
+  ('index', 'Selectors.tex', ur'Selectors Documentation',
+   ur'Scrapy/Selectors developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
