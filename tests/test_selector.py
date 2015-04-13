@@ -2,11 +2,10 @@ import re
 import warnings
 import weakref
 import six
+
 from twisted.trial import unittest
-from scrapy.exceptions import ScrapyDeprecationWarning
-from scrapy.http import TextResponse, HtmlResponse, XmlResponse
-from scrapy.selector import Selector
-from scrapy.selector.lxmlsel import XmlXPathSelector, HtmlXPathSelector, XPathSelector
+
+from selectors import Selector
 
 
 class SelectorTestCase(unittest.TestCase):
@@ -16,8 +15,7 @@ class SelectorTestCase(unittest.TestCase):
     def test_simple_selection(self):
         """Simple selector tests"""
         body = "<p><input name='a'value='1'/><input name='b'value='2'/></p>"
-        response = TextResponse(url="http://example.com", body=body)
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
 
         xl = sel.xpath('//input')
         self.assertEqual(2, len(xl))
@@ -39,8 +37,7 @@ class SelectorTestCase(unittest.TestCase):
 
     def test_representation_slice(self):
         body = u"<p><input name='{}' value='\xa9'/></p>".format(50 * 'b')
-        response = TextResponse(url="http://example.com", body=body, encoding='utf8')
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
 
         self.assertEqual(
             map(repr, sel.xpath('//input/@name')),
@@ -49,8 +46,7 @@ class SelectorTestCase(unittest.TestCase):
 
     def test_representation_unicode_query(self):
         body = u"<p><input name='{}' value='\xa9'/></p>".format(50 * 'b')
-        response = TextResponse(url="http://example.com", body=body, encoding='utf8')
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
         self.assertEqual(
             map(repr, sel.xpath(u'//input[@value="\xa9"]/@value')),
             ["<Selector xpath=u'//input[@value=\"\\xa9\"]/@value' data=u'\\xa9'>"]
@@ -59,8 +55,7 @@ class SelectorTestCase(unittest.TestCase):
     def test_extract_first(self):
         """Test if extract_first() returns first element"""
         body = '<ul><li id="1">1</li><li id="2">2</li></ul>'
-        response = TextResponse(url="http://example.com", body=body)
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
 
         self.assertEqual(sel.xpath('//ul/li/text()').extract_first(),
                          sel.xpath('//ul/li/text()').extract()[0])
@@ -76,8 +71,7 @@ class SelectorTestCase(unittest.TestCase):
     def test_re_first(self):
         """Test if re_first() returns first matched element"""
         body = '<ul><li id="1">1</li><li id="2">2</li></ul>'
-        response = TextResponse(url="http://example.com", body=body)
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
 
         self.assertEqual(sel.xpath('//ul/li/text()').re_first('\d'),
                          sel.xpath('//ul/li/text()').re('\d')[0])
@@ -93,8 +87,7 @@ class SelectorTestCase(unittest.TestCase):
 
     def test_select_unicode_query(self):
         body = u"<p><input name='\xa9' value='1'/></p>"
-        response = TextResponse(url="http://example.com", body=body, encoding='utf8')
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
         self.assertEqual(sel.xpath(u'//input[@name="\xa9"]/@value').extract(), [u'1'])
 
     def test_list_elements_type(self):
@@ -105,8 +98,7 @@ class SelectorTestCase(unittest.TestCase):
 
     def test_boolean_result(self):
         body = "<p><input name='a'value='1'/><input name='b'value='2'/></p>"
-        response = TextResponse(url="http://example.com", body=body)
-        xs = self.sscls(response)
+        xs = self.sscls(url="http://example.com", text=body)
         self.assertEquals(xs.xpath("//input[@name='a']/@name='a'").extract(), [u'1'])
         self.assertEquals(xs.xpath("//input[@name='a']/@name='n'").extract(), [u'0'])
 
@@ -121,18 +113,6 @@ class SelectorTestCase(unittest.TestCase):
         xs = self.sscls(text=text, type='xml')
         self.assertEqual(xs.xpath("//div").extract(),
                          [u'<div><img src="a.jpg"><p>Hello</p></img></div>'])
-
-    def test_flavor_detection(self):
-        text = '<div><img src="a.jpg"><p>Hello</div>'
-        sel = self.sscls(XmlResponse('http://example.com', body=text))
-        self.assertEqual(sel.type, 'xml')
-        self.assertEqual(sel.xpath("//div").extract(),
-                         [u'<div><img src="a.jpg"><p>Hello</p></img></div>'])
-
-        sel = self.sscls(HtmlResponse('http://example.com', body=text))
-        self.assertEqual(sel.type, 'html')
-        self.assertEqual(sel.xpath("//div").extract(),
-                         [u'<div><img src="a.jpg"><p>Hello</p></div>'])
 
     def test_nested_selectors(self):
         """Nested selector tests"""
@@ -149,8 +129,7 @@ class SelectorTestCase(unittest.TestCase):
                     </div>
                   </body>"""
 
-        response = HtmlResponse(url="http://example.com", body=body)
-        x = self.sscls(response)
+        x = self.sscls(url="http://example.com", text=body)
         divtwo = x.xpath('//div[@class="two"]')
         self.assertEqual(divtwo.xpath("//li").extract(),
                          ["<li>one</li>", "<li>two</li>", "<li>four</li>", "<li>five</li>", "<li>six</li>"])
@@ -181,8 +160,7 @@ class SelectorTestCase(unittest.TestCase):
         </test>
         """
 
-        response = XmlResponse(url="http://example.com", body=body)
-        x = self.sscls(response)
+        x = self.sscls(url="http://example.com", text=body, type="xml")
 
         x.register_namespace("somens", "http://scrapy.org")
         self.assertEqual(x.xpath("//somens:a/text()").extract(),
@@ -198,8 +176,7 @@ class SelectorTestCase(unittest.TestCase):
     <p:SecondTestTag><material>iron</material><price>90</price><p:name>Dried Rose</p:name></p:SecondTestTag>
 </BrowseNode>
         """
-        response = XmlResponse(url="http://example.com", body=body)
-        x = self.sscls(response)
+        x = self.sscls(url="http://example.com", text=body, type="xml")
         x.register_namespace("xmlns", "http://webservices.amazon.com/AWSECommerceService/2005-10-05")
         x.register_namespace("p", "http://www.scrapy.org/product")
         x.register_namespace("b", "http://somens.com")
@@ -220,20 +197,13 @@ class SelectorTestCase(unittest.TestCase):
                     </ul>
                     Age: 20
                   </div>"""
-        response = HtmlResponse(url="http://example.com", body=body)
-        x = self.sscls(response)
+        x = self.sscls(url="http://example.com", text=body)
 
         name_re = re.compile("Name: (\w+)")
         self.assertEqual(x.xpath("//ul/li").re(name_re),
                          ["John", "Paul"])
         self.assertEqual(x.xpath("//ul/li").re("Age: (\d+)"),
                          ["10", "20"])
-
-    def test_re_intl(self):
-        body = """<div>Evento: cumplea\xc3\xb1os</div>"""
-        response = HtmlResponse(url="http://example.com", body=body, encoding='utf-8')
-        x = self.sscls(response)
-        self.assertEqual(x.xpath("//div").re("Evento: (\w+)"), [u'cumplea\xf1os'])
 
     def test_selector_over_text(self):
         hs = self.sscls(text='<root>lala</root>')
@@ -244,56 +214,27 @@ class SelectorTestCase(unittest.TestCase):
 
     def test_invalid_xpath(self):
         "Test invalid xpath raises ValueError with the invalid xpath"
-        response = XmlResponse(url="http://example.com", body="<html></html>")
-        x = self.sscls(response)
+        x = self.sscls(url="http://example.com", text="<html></html>", type="xml")
         xpath = "//test[@foo='bar]"
         self.assertRaisesRegexp(ValueError, re.escape(xpath), x.xpath, xpath)
 
     def test_invalid_xpath_unicode(self):
         "Test *Unicode* invalid xpath raises ValueError with the invalid xpath"
-        response = XmlResponse(url="http://example.com", body="<html></html>")
-        x = self.sscls(response)
+        x = self.sscls(url="http://example.com", text="<html></html>", type="xml")
         xpath = u"//test[@foo='\u0431ar]"
         encoded = xpath if six.PY3 else xpath.encode('unicode_escape')
         self.assertRaisesRegexp(ValueError, re.escape(encoded), x.xpath, xpath)
 
-    def test_http_header_encoding_precedence(self):
-        # u'\xa3'     = pound symbol in unicode
-        # u'\xc2\xa3' = pound symbol in utf-8
-        # u'\xa3'     = pound symbol in latin-1 (iso-8859-1)
-
-        meta = u'<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">'
-        head = u'<head>' + meta + u'</head>'
-        body_content = u'<span id="blank">\xa3</span>'
-        body = u'<body>' + body_content + u'</body>'
-        html = u'<html>' + head + body + u'</html>'
-        encoding = 'utf-8'
-        html_utf8 = html.encode(encoding)
-
-        headers = {'Content-Type': ['text/html; charset=utf-8']}
-        response = HtmlResponse(url="http://example.com", headers=headers, body=html_utf8)
-        x = self.sscls(response)
-        self.assertEquals(x.xpath("//span[@id='blank']/text()").extract(),
-                          [u'\xa3'])
-
     def test_empty_bodies(self):
         # shouldn't raise errors
-        r1 = TextResponse('http://www.example.com', body='')
-        self.sscls(r1).xpath('//text()').extract()
+        self.sscls(url='http://www.example.com', text='').xpath('//text()').extract()
 
     def test_null_bytes(self):
         # shouldn't raise errors
-        r1 = TextResponse('http://www.example.com', \
-                          body='<root>pre\x00post</root>', \
-                          encoding='utf-8')
-        self.sscls(r1).xpath('//text()').extract()
-
-    def test_badly_encoded_body(self):
-        # \xe9 alone isn't valid utf8 sequence
-        r1 = TextResponse('http://www.example.com', \
-                          body='<html><p>an Jos\xe9 de</p><html>', \
-                          encoding='utf-8')
-        self.sscls(r1).xpath('//text()').extract()
+        self.sscls(url='http://www.example.com',
+                    text='<root>pre\x00post</root>',
+                    type='xml') \
+            .xpath('//text()').extract()
 
     def test_select_on_unevaluable_nodes(self):
         r = self.sscls(text=u'<span class="big">some text</span>')
@@ -322,13 +263,6 @@ class SelectorTestCase(unittest.TestCase):
         self.assertEquals(x2.extract(), [u'<b>Options:</b>'])
     test_nested_select_on_text_nodes.skip = "Text nodes lost parent node reference in lxml"
 
-    def test_weakref_slots(self):
-        """Check that classes are using slots and are weak-referenceable"""
-        x = self.sscls()
-        weakref.ref(x)
-        assert not hasattr(x, '__dict__'), "%s does not use __slots__" % \
-            x.__class__.__name__
-
     def test_remove_namespaces(self):
         xml = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-US" xmlns:media="http://search.yahoo.com/mrss/">
@@ -336,7 +270,7 @@ class SelectorTestCase(unittest.TestCase):
   <link type="application/atom+xml">
 </feed>
 """
-        sel = self.sscls(XmlResponse("http://example.com/feed.atom", body=xml))
+        sel = self.sscls(url="http://example.com/feed.atom", text=xml, type="xml")
         self.assertEqual(len(sel.xpath("//link")), 0)
         sel.remove_namespaces()
         self.assertEqual(len(sel.xpath("//link")), 2)
@@ -348,7 +282,7 @@ class SelectorTestCase(unittest.TestCase):
   <link atom:type="application/atom+xml">
 </feed>
 """
-        sel = self.sscls(XmlResponse("http://example.com/feed.atom", body=xml))
+        sel = self.sscls(url="http://example.com/feed.atom", text=xml, type="xml")
         self.assertEqual(len(sel.xpath("//link/@type")), 0)
         sel.remove_namespaces()
         self.assertEqual(len(sel.xpath("//link/@type")), 2)
@@ -372,17 +306,15 @@ class SelectorTestCase(unittest.TestCase):
                     </div>
                   </body>"""
 
-        response = HtmlResponse(url="http://example.com", body=body)
-
         # .getparent() is available for text nodes and attributes
         # only when smart_strings are on
-        x = self.sscls(response)
+        x = self.sscls(url="http://example.com", text=body)
         li_text = x.xpath('//li/text()')
         self.assertFalse(any(map(lambda e: hasattr(e._root, 'getparent'), li_text)))
         div_class = x.xpath('//div/@class')
         self.assertFalse(any(map(lambda e: hasattr(e._root, 'getparent'), div_class)))
 
-        x = SmartStringsSelector(response)
+        x = SmartStringsSelector(url="http://example.com", text=body)
         li_text = x.xpath('//li/text()')
         self.assertTrue(all(map(lambda e: hasattr(e._root, 'getparent'), li_text)))
         div_class = x.xpath('//div/@class')
@@ -393,114 +325,9 @@ class SelectorTestCase(unittest.TestCase):
             '<!DOCTYPE foo [ <!ELEMENT foo ANY > <!ENTITY xxe SYSTEM '\
             '"file:///etc/passwd" >]><foo>&xxe;</foo>'
 
-        response = XmlResponse('http://example.com', body=malicious_xml)
-        sel = self.sscls(response=response)
+        sel = self.sscls(url='http://example.com', text=malicious_xml, type="xml")
 
         self.assertEqual(sel.extract(), '<foo>&xxe;</foo>')
-
-
-class DeprecatedXpathSelectorTest(unittest.TestCase):
-
-    text = '<div><img src="a.jpg"><p>Hello</div>'
-
-    def test_warnings_xpathselector(self):
-        cls = XPathSelector
-        with warnings.catch_warnings(record=True) as w:
-            class UserClass(cls):
-                pass
-
-            # subclassing must issue a warning
-            self.assertEqual(len(w), 1, str(cls))
-            self.assertIn('scrapy.Selector', str(w[0].message))
-
-            # subclass instance doesn't issue a warning
-            usel = UserClass(text=self.text)
-            self.assertEqual(len(w), 1)
-
-            # class instance must issue a warning
-            sel = cls(text=self.text)
-            self.assertEqual(len(w), 2, str((cls, [x.message for x in w])))
-            self.assertIn('scrapy.Selector', str(w[1].message))
-
-            # subclass and instance checks
-            self.assertTrue(issubclass(cls, Selector))
-            self.assertTrue(isinstance(sel, Selector))
-            self.assertTrue(isinstance(usel, Selector))
-
-    def test_warnings_xmlxpathselector(self):
-        cls = XmlXPathSelector
-        with warnings.catch_warnings(record=True) as w:
-            class UserClass(cls):
-                pass
-
-            # subclassing must issue a warning
-            self.assertEqual(len(w), 1, str(cls))
-            self.assertIn('scrapy.Selector', str(w[0].message))
-
-            # subclass instance doesn't issue a warning
-            usel = UserClass(text=self.text)
-            self.assertEqual(len(w), 1)
-
-            # class instance must issue a warning
-            sel = cls(text=self.text)
-            self.assertEqual(len(w), 2, str((cls, [x.message for x in w])))
-            self.assertIn('scrapy.Selector', str(w[1].message))
-
-            # subclass and instance checks
-            self.assertTrue(issubclass(cls, Selector))
-            self.assertTrue(issubclass(cls, XPathSelector))
-            self.assertTrue(isinstance(sel, Selector))
-            self.assertTrue(isinstance(usel, Selector))
-            self.assertTrue(isinstance(sel, XPathSelector))
-            self.assertTrue(isinstance(usel, XPathSelector))
-
-    def test_warnings_htmlxpathselector(self):
-        cls = HtmlXPathSelector
-        with warnings.catch_warnings(record=True) as w:
-            class UserClass(cls):
-                pass
-
-            # subclassing must issue a warning
-            self.assertEqual(len(w), 1, str(cls))
-            self.assertIn('scrapy.Selector', str(w[0].message))
-
-            # subclass instance doesn't issue a warning
-            usel = UserClass(text=self.text)
-            self.assertEqual(len(w), 1)
-
-            # class instance must issue a warning
-            sel = cls(text=self.text)
-            self.assertEqual(len(w), 2, str((cls, [x.message for x in w])))
-            self.assertIn('scrapy.Selector', str(w[1].message))
-
-            # subclass and instance checks
-            self.assertTrue(issubclass(cls, Selector))
-            self.assertTrue(issubclass(cls, XPathSelector))
-            self.assertTrue(isinstance(sel, Selector))
-            self.assertTrue(isinstance(usel, Selector))
-            self.assertTrue(isinstance(sel, XPathSelector))
-            self.assertTrue(isinstance(usel, XPathSelector))
-
-    def test_xpathselector(self):
-        with warnings.catch_warnings(record=True):
-            hs = XPathSelector(text=self.text)
-            self.assertEqual(hs.select("//div").extract(),
-                             [u'<div><img src="a.jpg"><p>Hello</p></div>'])
-            self.assertRaises(RuntimeError, hs.css, 'div')
-
-    def test_htmlxpathselector(self):
-        with warnings.catch_warnings(record=True):
-            hs = HtmlXPathSelector(text=self.text)
-            self.assertEqual(hs.select("//div").extract(),
-                             [u'<div><img src="a.jpg"><p>Hello</p></div>'])
-            self.assertRaises(RuntimeError, hs.css, 'div')
-
-    def test_xmlxpathselector(self):
-        with warnings.catch_warnings(record=True):
-            xs = XmlXPathSelector(text=self.text)
-            self.assertEqual(xs.select("//div").extract(),
-                             [u'<div><img src="a.jpg"><p>Hello</p></img></div>'])
-            self.assertRaises(RuntimeError, xs.css, 'div')
 
 
 class ExsltTestCase(unittest.TestCase):
@@ -517,8 +344,7 @@ class ExsltTestCase(unittest.TestCase):
         <a href="http://www.bayes.co.uk/xml/index.xml?/xml/utils/rechecker.xml">EXSLT match example</a>
         </div>
         """
-        response = TextResponse(url="http://example.com", body=body)
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
 
         # re:test()
         self.assertEqual(
@@ -595,8 +421,7 @@ class ExsltTestCase(unittest.TestCase):
           </div>
         </div>
         """
-        response = TextResponse(url="http://example.com", body=body)
-        sel = self.sscls(response)
+        sel = self.sscls(url="http://example.com", text=body)
 
         self.assertEqual(
             sel.xpath('''//div[@itemtype="http://schema.org/Event"]
