@@ -18,7 +18,7 @@ achieve this:
    library).
 
 Scrapy comes with its own mechanism for extracting data. They're called
-selectors because they "select" certain parts of the HTML document specified
+Selectors because they "select" certain parts of the HTML document specified
 either by `XPath`_ or `CSS`_ expressions.
 
 `XPath`_ is a language for selecting nodes in XML documents, which can also be
@@ -52,13 +52,10 @@ Constructing selectors
 
 .. highlight:: python
 
-Scrapy selectors are instances of :class:`~scrapy.selector.Selector` class
-constructed by passing **text** or :class:`~scrapy.http.TextResponse`
-object. It automatically chooses the best parsing rules (XML vs HTML) based on
-input type::
+Selectors are instances of :class:`~selectors.Selector` class
+constructed by passing **text** with optional **type** argument (if text is not html)::
 
-    >>> from scrapy.selector import Selector
-    >>> from scrapy.http import HtmlResponse
+    >>> from selectors import Selector
 
 Constructing from text::
 
@@ -66,22 +63,11 @@ Constructing from text::
     >>> Selector(text=body).xpath('//span/text()').extract()
     [u'good']
 
-Constructing from response::
-
-    >>> response = HtmlResponse(url='http://example.com', body=body)
-    >>> Selector(response=response).xpath('//span/text()').extract()
-    [u'good']
-
-For convenience, response objects exposes a selector on `.selector` attribute,
-it's totally OK to use this shortcut when possible::
-
-    >>> response.selector.xpath('//span/text()').extract()
-    [u'good']
-
 
 Using selectors
 ---------------
 
+Scrapy depends on Selectors so by installing Scrapy you have installed Selectors as well.
 To explain how to use the selectors we'll use the `Scrapy shell` (which
 provides interactive testing) and an example page located in the Scrapy
 documentation server:
@@ -97,14 +83,14 @@ Here's its HTML code:
 
 .. highlight:: sh
 
-First, let's open the shell::
+First, let's open the Scrapy shell::
 
     scrapy shell http://doc.scrapy.org/en/latest/_static/selectors-sample1.html
 
 Then, after the shell loads, you'll have the response available as ``response``
 shell variable, and its attached selector in ``response.selector`` attribute.
 
-Since we're dealing with HTML, the selector will automatically use an HTML parser.
+  .. NOTE:: Scrapy has access to HTTP response headers so it knows whether to use HTML or XML parser.
 
 .. highlight:: python
 
@@ -123,8 +109,8 @@ convenient shortcuts: ``response.xpath()`` and ``response.css()``::
     [<Selector (text) xpath=//title/text()>]
 
 As you can see, ``.xpath()`` and ``.css()`` methods returns an
-:class:`~scrapy.selector.SelectorList` instance, which is a list of new
-selectors. This API can be used quickly for selecting nested data::
+:class:`~scrapy.selector.SelectorList` instance, which is a list of
+Selector instances. This API can be used quickly for selecting nested data::
 
     >>> response.css('img').xpath('@src').extract()
     [u'image1_thumb.jpg',
@@ -551,37 +537,20 @@ to use the ``.`` in the XPath expressions that will follow.
 Built-in Selectors reference
 ============================
 
-.. module:: scrapy.selector
+.. module:: selectors
    :synopsis: Selector class
 
-.. class:: Selector(response=None, text=None, type=None)
+.. class:: Selector(text=None, type=None)
 
   An instance of :class:`Selector` is a wrapper over response to select
   certain parts of its content.
 
-  ``response`` is a :class:`~scrapy.http.HtmlResponse` or
-  :class:`~scrapy.http.XmlResponse` object that will be used for selecting and
-  extracting data.
-
   ``text`` is a unicode string or utf-8 encoded text for cases when a
-  ``response`` isn't available. Using ``text`` and ``response`` together is
-  undefined behavior.
+  ``response`` isn't available.
 
-  ``type`` defines the selector type, it can be ``"html"``, ``"xml"`` or ``None`` (default).
+  ``type`` defines the selector type, it can be ``"html"`` (default) or ``"xml"``.
 
-    If ``type`` is ``None``, the selector automatically chooses the best type
-    based on ``response`` type (see below), or defaults to ``"html"`` in case it
-    is used together with ``text``.
-
-    If ``type`` is ``None`` and a ``response`` is passed, the selector type is
-    inferred from the response type as follow:
-
-        * ``"html"`` for :class:`~scrapy.http.HtmlResponse` type
-        * ``"xml"`` for :class:`~scrapy.http.XmlResponse` type
-        * ``"html"`` for anything else
-
-   Otherwise, if ``type`` is set, the selector type will be forced and no
-   detection will occur.
+    Default ``type`` is set to ``html``. When used with Scrapy, it is set based on HTTP response.
 
   .. method:: xpath(query)
 
@@ -593,7 +562,7 @@ Built-in Selectors reference
 
       .. note::
 
-          For convenience this method can be called as ``response.xpath()``
+          If used with Scrapy then for convenience this method can be called as ``response.xpath()``
 
   .. method:: css(query)
 
@@ -606,7 +575,7 @@ Built-in Selectors reference
 
       .. note::
 
-          For convenience this method can be called as ``response.css()``
+          If used with Scrapy then for convenience this method can be called as ``response.css()``
 
   .. method:: extract()
 
@@ -683,7 +652,7 @@ Here's a couple of :class:`Selector` examples to illustrate several concepts.
 In all cases, we assume there is already an :class:`Selector` instantiated with
 a :class:`~scrapy.http.HtmlResponse` object like this::
 
-      sel = Selector(html_response)
+      sel = Selector(text=html_response.body)
 
 1. Select all ``<h1>`` elements from a HTML response body, returning a list of
    :class:`Selector` objects (ie. a :class:`SelectorList` object)::
@@ -708,7 +677,7 @@ Here's a couple of examples to illustrate several concepts. In both cases we
 assume there is already an :class:`Selector` instantiated with a
 :class:`~scrapy.http.XmlResponse` object like this::
 
-      sel = Selector(xml_response)
+      sel = Selector(text=xml_response.body, type="xml")
 
 1. Select all ``<product>`` elements from a XML response body, returning a list
    of :class:`Selector` objects (ie. a :class:`SelectorList` object)::
@@ -757,8 +726,8 @@ of having to call it manually. This is because of two reasons which, in order
 of relevance, are:
 
 1. Removing namespaces requires to iterate and modify all nodes in the
-   document, which is a reasonably expensive operation to performs for all
-   documents crawled by Scrapy
+   document, which is a reasonably expensive operation to perform for all
+   documents crawled by Scrapy.
 
 2. There could be some cases where using namespaces is actually required, in
    case some element names clash between namespaces. These cases are very rare

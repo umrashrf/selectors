@@ -1,6 +1,6 @@
 #
-# Makefile for Scrapy documentation [based on Python documentation Makefile]
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Makefile for Selectors documentation [based on Python documentation Makefile]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 
 # You can set these variables from the command line.
@@ -24,7 +24,7 @@ help:
 	@echo "  linkcheck to check all external links for integrity"
 
 
-build: 
+build:
 	mkdir -p build/$(BUILDER) build/doctrees
 	-sphinx-build $(ALLSPHINXOPTS)
 	@echo

@@ -28,25 +28,25 @@ def setup(app):
     app.add_role('rev', rev_role)
 
 def source_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    ref = 'https://github.com/scrapy/scrapy/blob/master/' + text
+    ref = 'https://github.com/scrapy/selectors/blob/master/' + text
     set_classes(options)
     node = nodes.reference(rawtext, text, refuri=ref, **options)
     return [node], []
 
 def issue_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    ref = 'https://github.com/scrapy/scrapy/issues/' + text
+    ref = 'https://github.com/scrapy/selectors/issues/' + text
     set_classes(options)
     node = nodes.reference(rawtext, 'issue ' + text, refuri=ref, **options)
     return [node], []
 
 def commit_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    ref = 'https://github.com/scrapy/scrapy/commit/' + text
+    ref = 'https://github.com/scrapy/selectors/commit/' + text
     set_classes(options)
     node = nodes.reference(rawtext, 'commit ' + text, refuri=ref, **options)
     return [node], []
 
 def rev_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-    ref = 'http://hg.scrapy.org/scrapy/changeset/' + text
+    ref = 'http://hg.scrapy.org/selectors/changeset/' + text
     set_classes(options)
     node = nodes.reference(rawtext, 'r' + text, refuri=ref, **options)
     return [node], []
