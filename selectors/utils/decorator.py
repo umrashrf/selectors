@@ -1,9 +1,7 @@
 import warnings
 from functools import wraps
 
-from twisted.internet import defer, threads
-
-from scrapy.exceptions import ScrapyDeprecationWarning
+from selectors.exceptions import SelectorsDeprecationWarning
 
 
 def deprecated(use_instead=None):
@@ -17,7 +15,7 @@ def deprecated(use_instead=None):
             message = "Call to deprecated function %s." % func.__name__
             if use_instead:
                 message += " Use %s instead." % use_instead
-            warnings.warn(message, category=ScrapyDeprecationWarning, stacklevel=2)
+            warnings.warn(message, category=SelectorsDeprecationWarning, stacklevel=2)
             return func(*args, **kwargs)
         return wrapped
 
@@ -25,20 +23,3 @@ def deprecated(use_instead=None):
         deco = deco(use_instead)
         use_instead = None
     return deco
-
-
-def defers(func):
-    """Decorator to make sure a function always returns a deferred"""
-    @wraps(func)
-    def wrapped(*a, **kw):
-        return defer.maybeDeferred(func, *a, **kw)
-    return wrapped
-
-def inthread(func):
-    """Decorator to call a function in a thread and return a deferred with the
-    result
-    """
-    @wraps(func)
-    def wrapped(*a, **kw):
-        return threads.deferToThread(func, *a, **kw)
-    return wrapped
